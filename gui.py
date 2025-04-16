@@ -1,43 +1,108 @@
+import time
+
 import tkinter as tk
 from tkinter import ttk
 from tkinter import font
+
 
 
 class MainFrame(ttk.Frame):
     def __init__(self, master):
         super().__init__(master)
         self.i = 0
+        self.timer = False
+        self.key_pressed = False
+        self.start_time = 0
+        self.end_time = 0
+        self.misse_typed = 0
+        self.wpms = []
+
         self.labels = []
         # style
         self.style = ttk.Style()
-        self.style.configure("GrayText.TLabel", foreground="#212121")
-        self.style.configure("Green.TLabel", foreground="#00ff00")
-        self.style.configure("Red.TLabel", foreground="#ff0000")
+        self._style()
         # sample text
-        self.text = "hello world"
-        label_frame = ttk.Frame(self, padding=(5, 10), relief="solid")
-        label_frame.pack(padx=10, pady=20, side="top")
+        self.text = "They are 10 types of people in the world. The poeple who knows binary and people who don't."
+        self.words = self.text.split()
+        self.words_num = len(self.words)
 
-        # make label for each char.
-        for char in self.text:
-            label = ttk.Label(label_frame, text=char)
-            label["font"] = font.Font(family="default", size=20)
-            label["style"] = "GrayText.TLabel"
-            label.pack(fill=tk.BOTH, expand=True, side='left' )
-            self.labels.append(label)
+        # how many frames do we need
+        frame_num = len(self.words) // 6
+        frames = []
+        for frame in range(frame_num):
+            frames.append(ttk.Frame(relief="solid", padding=5))
 
-        label_frame.focus_set()
-        label_frame.bind("<KeyRelease>", self.on_keypress)
+        x = 0
+        y = len(self.words) // len(frames)
+        for frame in frames:
+            frame.focus_set()
+            frame.bind("<KeyRelease>", self.on_keypress)
+            frame.pack(padx=0, pady=15, side="top")
+            text_part = self.words[x:y]
+            print(text_part)
+
+            for word in text_part:
+                for char in word:
+                    label = ttk.Label(frame, text=char)
+                    label.pack(padx=1, side="left")
+                    label["font"] = font.Font(family="default", size=20)
+                    label["style"] = "GrayText.TLabel"
+                    self.labels.append(label)
+            x = y
+            y += len(self.words) // len(frames)
+
+
+        self.result_var = tk.StringVar()
+        self.result_var.set("Speed: ")
+        elapsed_time_label = ttk.Label(self, textvariable=self.result_var)
+        elapsed_time_label.pack()
+
+
+
+    def _style(self):
+        styles = (
+                ("GrayText.TLabel", {"foreground": "#121212" }),
+                ("Green.TLabel", {"foreground": "#28a745" }),
+                ("Red.TLabel", {"foreground": "#dc3545", "background":"#ffffff" }),
+        )
+        for style, options in styles:
+            self.style.configure(style, **options)
+
+    def get_wpm(self, elapsed_time):
+        wpm = self.words_num / (elapsed_time / 60)  # Calculate WPM correctly
+        self.wpms.append(wpm)
+        print(self.wpms)
+        wpm_avg = sum(self.wpms) / len(self.wpms)
+        self.result_var.set(f"Speed: {wpm:.2f}")
+
+    def get_accu(self):
+        pass
 
     def on_keypress(self, event):
         # TODO: fix Space problem.
+
+        # Start timer when user press any key
+        # claculate speed on any key pressed
+        # calculate accurecy on any key press
+
+        # start time for the first time
+        if not self.timer:
+            self.timer = True
+            self.start_time = time.time()
+
+        # stop 
         if self.i > len(self.text) - 1:
+            self.elapsed_time = time.time() - self.start_time
+            self.get_wpm(self.elapsed_time)
             return
 
         if self.text[self.i] == event.keysym:
             self.labels[self.i].configure(style="Green.TLabel")
         else:
             self.labels[self.i].configure(style="Red.TLabel")
+            self.misse_typed += 1
+
+        # accuracy = (1 - (self.misse_typed / len(text))) * 100
 
         self.i += 1
 
@@ -46,7 +111,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.geometry("600x300")
-        MainFrame(self).pack(fill=tk.BOTH, expand=True)
+        MainFrame(self).pack(padx=20, pady=20, fill=tk.BOTH)
 
     def run(self):
         self.mainloop()
