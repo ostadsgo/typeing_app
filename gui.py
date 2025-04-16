@@ -5,7 +5,7 @@ from tkinter import ttk
 from tkinter import font
 
 
-
+# TODO: Make wpm calculation dynamic for each word.
 class MainFrame(ttk.Frame):
     def __init__(self, master):
         super().__init__(master)
@@ -39,6 +39,7 @@ class MainFrame(ttk.Frame):
             frame.bind("<KeyRelease>", self.on_keypress)
             frame.pack(padx=0, pady=15, side="top")
             text_part = self.words[x:y]
+            text_part = " ".join(text_part) + " "
             print(text_part)
 
             for word in text_part:
@@ -51,24 +52,28 @@ class MainFrame(ttk.Frame):
             x = y
             y += len(self.words) // len(frames)
 
-
         self.result_var = tk.StringVar()
         self.result_var.set("Speed: ")
         elapsed_time_label = ttk.Label(self, textvariable=self.result_var)
         elapsed_time_label.pack()
 
+        self.accu_var = tk.StringVar()
+        self.accu_var.set("Acuracy: ")
+        accuracy_time_label = ttk.Label(self, textvariable=self.accu_var)
+        accuracy_time_label.pack()
 
 
     def _style(self):
         styles = (
-                ("GrayText.TLabel", {"foreground": "#121212" }),
-                ("Green.TLabel", {"foreground": "#28a745" }),
-                ("Red.TLabel", {"foreground": "#dc3545", "background":"#ffffff" }),
+            ("GrayText.TLabel", {"foreground": "#121212"}),
+            ("Green.TLabel", {"foreground": "#28a745"}),
+            ("Red.TLabel", {"foreground": "#dc3545", "background": "#ffffff"}),
         )
         for style, options in styles:
             self.style.configure(style, **options)
 
     def get_wpm(self, elapsed_time):
+        # wpm = total_words_typed / time spend
         wpm = self.words_num / (elapsed_time / 60)  # Calculate WPM correctly
         self.wpms.append(wpm)
         print(self.wpms)
@@ -76,7 +81,9 @@ class MainFrame(ttk.Frame):
         self.result_var.set(f"Speed: {wpm:.2f}")
 
     def get_accu(self):
-        pass
+        accuracy = (1 - (self.misse_typed / len(self.text))) * 100
+        self.accu_var.set(f"Acuracy: {accuracy:.2f}%")
+
 
     def on_keypress(self, event):
         # TODO: fix Space problem.
@@ -90,10 +97,13 @@ class MainFrame(ttk.Frame):
             self.timer = True
             self.start_time = time.time()
 
-        # stop 
+        # self.elapsed_time = time.time() - self.start_time
+        # self.get_wpm(self.elapsed_time)
+        # stop
         if self.i > len(self.text) - 1:
             self.elapsed_time = time.time() - self.start_time
             self.get_wpm(self.elapsed_time)
+            self.get_accu()
             return
 
         if self.text[self.i] == event.keysym:
@@ -102,7 +112,6 @@ class MainFrame(ttk.Frame):
             self.labels[self.i].configure(style="Red.TLabel")
             self.misse_typed += 1
 
-        # accuracy = (1 - (self.misse_typed / len(text))) * 100
 
         self.i += 1
 
@@ -110,7 +119,7 @@ class MainFrame(ttk.Frame):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.geometry("600x300")
+        self.geometry("600x400")
         MainFrame(self).pack(padx=20, pady=20, fill=tk.BOTH)
 
     def run(self):
